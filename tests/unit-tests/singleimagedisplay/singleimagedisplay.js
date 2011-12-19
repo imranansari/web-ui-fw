@@ -4,6 +4,113 @@
 
 (function ($) {
 
+    var func = [
+
+        // 0
+        function( $image, parentWidth, parentHeight ) {
+            var $realImage = $image.siblings("img.ui-singleimagedisplay");
+            var width = $realImage.width();
+            var height = $realImage.height();
+            var imageArea = width*height;
+            var aspectRatio = (imageArea==0)?1.0:(width/height);
+            var imageIsPortrait = aspectRatio<1.0;
+
+            var parentLimit = Math.min( parentWidth, parentHeight );
+
+            // test width/height is same as container
+            if ( imageIsPortrait ) {
+                // height is the limit
+                equal(height, parentLimit, "portrait image height correct");
+            } else {
+                // width is the limit
+                equal(width, parentLimit, "landscape image width correct");
+            }
+
+            var originalImage = $realImage[0];
+            var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
+
+            // need a fuzzy compare here, it seems
+            equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
+
+            $image.unbind( "init" );
+        },
+
+        // 1
+        function( $image ) {
+            var $siblings = $image.siblings();
+            var $div = $siblings.filter("div.ui-singleimagedisplay-nocontent").first();
+            ok($div.css("background-image")!="none", "background image not none");
+
+            var $realImage = $siblings.filter("img.ui-singleimagedisplay");
+            equal($realImage.length, 0, "real image is empty");
+
+            var width = $div.width();
+            var height = $div.height();
+
+            var parentWidth = $image.parent().width();
+            var parentHeight = $image.parent().height();
+
+            equal( width, parentWidth, "background image fills container width" );
+            equal( height, parentHeight, "background image fills container height" );
+
+            $image.unbind( "init" );
+        },
+
+        // 2
+        function( $image, $customSrc ) {
+            var $siblings = $image.siblings();
+            var $div = $siblings.filter("div.ui-singleimagedisplay-nocontent").first();
+            ok(!$div.is(':visible'), "background div hidden");
+
+            var $realImage = $siblings.filter("img.ui-singleimagedisplay");
+            equal($realImage.length, 1, "real image is attached");
+            equal($realImage.attr('src'), $customSrc, "real image has correct customer src");
+
+            var width = $realImage.width();
+            var height = $realImage.height();
+
+            var parentWidth = $image.parent().width();
+            var parentHeight = $image.parent().height();
+
+            equal( width, parentWidth, "background image fills container width" );
+            equal( height, parentHeight, "background image fills container height" );
+
+            $image.unbind( "init" );
+        },
+
+        // 3
+        function( $image ) {
+            var $realImage = $image.siblings("img.ui-singleimagedisplay");
+            var width = $realImage.width();
+            var height = $realImage.height();
+            var imageArea = width*height;
+            var aspectRatio = (imageArea==0)?1.0:(width/height);
+            var imageIsPortrait = aspectRatio<1.0;
+
+            var parentWidth = window.innerWidth;
+            var parentHeight = window.innerHeight;
+            var parentLimit = Math.min( parentWidth, parentHeight );
+
+            // test width/height is same as container
+            if ( imageIsPortrait ) {
+                // height is the limit
+                equal(height, parentLimit, "portrait image height correct");
+            } else {
+                // width is the limit
+                equal(width, parentLimit, "landscape image width correct");
+            }
+
+            var originalImage = $realImage[0];
+            var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
+
+            // need a fuzzy compare here, it seems
+            equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
+
+            $image.unbind( "init" );
+        }
+
+    ];
+
     $.mobile.defaultTransition = "none";
 
     module("Single Image Display");
@@ -35,36 +142,6 @@
         var pageId = '#singleimagedisplay-test-resize-smallersquare-to-largersquare';
         var imageId = '#image1';
 
-        var func0 = function( $new_page, $image ) {
-            var $realImage = $image.siblings("img.ui-singleimagedisplay");
-            var width = $realImage.width();
-            var height = $realImage.height();
-            var imageArea = width*height;
-            var aspectRatio = (imageArea==0)?1.0:(width/height);
-            var imageIsPortrait = aspectRatio<1.0;
-
-            var parentWidth = $image.parent().width();
-            var parentHeight = $image.parent().height();
-            var parentLimit = Math.min( parentWidth, parentHeight );
-
-            // test width/height is same as container
-            if ( imageIsPortrait ) {
-                // height is the limit
-                equal(height, parentLimit, "portrait image height correct");
-            } else {
-                // width is the limit
-                equal(width, parentLimit, "landscape image width correct");
-            }
-
-            var originalImage = $realImage[0];
-            var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
-
-            // need a fuzzy compare here, it seems
-            equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
-
-            $image.unbind( "init" );
-        };
-
         $.testHelper.pageSequence([
 
             function () {
@@ -82,7 +159,9 @@
 
                 var $image = $new_page.find( imageId );
 
-                $image.bind( "init", func0( $new_page, $image ) );
+                var parentWidth = $image.parent().width();
+                var parentHeight = $image.parent().height();
+                $image.bind( "init", function() { func[0]( $image, parentWidth, parentHeight ) } );
 
                 $image.singleimagedisplay();
             },
@@ -113,35 +192,9 @@
                 var $new_page = $( pageId );
 
                 var $image = $new_page.find( imageId );
-                $image.bind( "init", function() {
-                    var $realImage = $image.siblings("img.ui-singleimagedisplay");
-                    var width = $realImage.width();
-                    var height = $realImage.height();
-                    var imageArea = width*height;
-                    var aspectRatio = (imageArea==0)?1.0:(width/height);
-                    var imageIsPortrait = aspectRatio<1.0;
-
-                    var parentWidth = $image.parent().width();
-                    var parentHeight = $image.parent().height();
-                    var parentLimit = Math.min( parentWidth, parentHeight );
-
-                    // test width/height is same as container
-                    if ( imageIsPortrait ) {
-                        // height is the limit
-                        equal(height, parentLimit, "portrait image height correct");
-                    } else {
-                        // width is the limit
-                        equal(width, parentLimit, "landscape image width correct");
-                    }
-
-                    var originalImage = $realImage[0];
-                    var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
-
-                    // need a fuzzy compare here, it seems
-                    equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
-
-                    $image.unbind( "init" );
-                });
+                var parentWidth = $image.parent().width();
+                var parentHeight = $image.parent().height();
+                $image.bind( "init", function() { func[0]( $image, parentWidth, parentHeight ) } );
 
                 $image.singleimagedisplay();
             },
@@ -172,35 +225,9 @@
                 var $new_page = $( pageId );
 
                 var $image = $new_page.find( imageId );
-                $image.bind( "init", function() {
-                    var $realImage = $image.siblings("img.ui-singleimagedisplay");
-                    var width = $realImage.width();
-                    var height = $realImage.height();
-                    var imageArea = width*height;
-                    var aspectRatio = (imageArea==0)?1.0:(width/height);
-                    var imageIsPortrait = aspectRatio<1.0;
-
-                    var parentWidth = $image.parent().width();
-                    var parentHeight = $image.parent().height();
-                    var parentLimit = Math.min( parentWidth, parentHeight );
-
-                    // test width/height is same as container
-                    if ( imageIsPortrait ) {
-                        // height is the limit
-                        equal(height, parentLimit, "portrait image height correct");
-                    } else {
-                        // width is the limit
-                        equal(width, parentLimit, "landscape image width correct");
-                    }
-
-                    var originalImage = $realImage[0];
-                    var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
-
-                    // need a fuzzy compare here, it seems
-                    equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
-
-                    $image.unbind( "init" );
-                });
+                var parentWidth = $image.parent().width();
+                var parentHeight = $image.parent().height();
+                $image.bind( "init", function() { func[0]( $image, parentWidth, parentHeight ) } );
 
                 $image.singleimagedisplay();
             },
@@ -231,35 +258,9 @@
                 var $new_page = $( pageId );
 
                 var $image = $new_page.find( imageId );
-                $image.bind( "init", function() {
-                    var $realImage = $image.siblings("img.ui-singleimagedisplay");
-                    var width = $realImage.width();
-                    var height = $realImage.height();
-                    var imageArea = width*height;
-                    var aspectRatio = (imageArea==0)?1.0:(width/height);
-                    var imageIsPortrait = aspectRatio<1.0;
-
-                    var parentWidth = $image.parent().width();
-                    var parentHeight = $image.parent().height();
-                    var parentLimit = Math.min( parentWidth, parentHeight );
-
-                    // test width/height is same as container
-                    if ( imageIsPortrait ) {
-                        // height is the limit
-                        equal(height, parentLimit, "portrait image height correct");
-                    } else {
-                        // width is the limit
-                        equal(width, parentLimit, "landscape image width correct");
-                    }
-
-                    var originalImage = $realImage[0];
-                    var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
-
-                    // need a fuzzy compare here, it seems
-                    equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
-
-                    $image.unbind( "init" );
-                });
+                var parentWidth = $image.parent().width();
+                var parentHeight = $image.parent().height();
+                $image.bind( "init", function() { func[0]( $image, parentWidth, parentHeight ) } );
 
                 $image.singleimagedisplay();
             },
@@ -290,35 +291,9 @@
                 var $new_page = $( pageId );
 
                 var $image = $new_page.find( imageId );
-                $image.bind( "init", function() {
-                    var $realImage = $image.siblings("img.ui-singleimagedisplay");
-                    var width = $realImage.width();
-                    var height = $realImage.height();
-                    var imageArea = width*height;
-                    var aspectRatio = (imageArea==0)?1.0:(width/height);
-                    var imageIsPortrait = aspectRatio<1.0;
-
-                    var parentWidth = $image.parent().width();
-                    var parentHeight = $image.parent().height();
-                    var parentLimit = Math.min( parentWidth, parentHeight );
-
-                    // test width/height is same as container
-                    if ( imageIsPortrait ) {
-                        // height is the limit
-                        equal(height, parentLimit, "portrait image height correct");
-                    } else {
-                        // width is the limit
-                        equal(width, parentLimit, "landscape image width correct");
-                    }
-
-                    var originalImage = $realImage[0];
-                    var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
-
-                    // need a fuzzy compare here, it seems
-                    equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
-
-                    $image.unbind( "init" );
-                });
+                var parentWidth = $image.parent().width();
+                var parentHeight = $image.parent().height();
+                $image.bind( "init", function() { func[0]( $image, parentWidth, parentHeight ) } );
 
                 $image.singleimagedisplay();
             },
@@ -344,25 +319,7 @@
 
                 var $image = $new_page.find( imageId );
 
-                $image.bind( "init", function() {
-                    var $siblings = $image.siblings();
-                    var $div = $siblings.filter("div.ui-singleimagedisplay-nocontent").first();
-                    ok($div.css("background-image")!="none", "background image not none");
-
-                    var $realImage = $siblings.filter("img.ui-singleimagedisplay");
-                    equal($realImage.length, 0, "real image is empty");
-
-                    var width = $div.width();
-                    var height = $div.height();
-
-                    var parentWidth = $image.parent().width();
-                    var parentHeight = $image.parent().height();
-
-                    equal( width, parentWidth, "background image fills container width" );
-                    equal( height, parentHeight, "background image fills container height" );
-
-                    $image.unbind( "init" );
-                });
+                $image.bind( "init", function() { func[1]( $image ) } );
 
                 $image.singleimagedisplay();
             },
@@ -389,26 +346,7 @@
 
                 var $image = $new_page.find( imageId );
 
-                $image.bind( "init", function() {
-                    var $siblings = $image.siblings();
-                    var $div = $siblings.filter("div.ui-singleimagedisplay-nocontent").first();
-                    ok(!$div.is(':visible'), "background div hidden");
-
-                    var $realImage = $siblings.filter("img.ui-singleimagedisplay");
-                    equal($realImage.length, 1, "real image is attached");
-                    equal($realImage.attr('src'), $customSrc, "real image has correct customer src");
-
-                    var width = $realImage.width();
-                    var height = $realImage.height();
-
-                    var parentWidth = $image.parent().width();
-                    var parentHeight = $image.parent().height();
-
-                    equal( width, parentWidth, "background image fills container width" );
-                    equal( height, parentHeight, "background image fills container height" );
-
-                    $image.unbind( "init" );
-                });
+                $image.bind( "init", function() { func[2]( $image, $customSrc ) } );
 
                 $image.singleimagedisplay({'noContent':$customSrc});
             },
@@ -441,36 +379,9 @@
                 var $new_page = $( pageId );
 
                 var $image = $new_page.find( imageId );
-                $image.bind( "init", function() {
-
-                    var $realImage = $image.siblings("img.ui-singleimagedisplay");
-                    var width = $realImage.width();
-                    var height = $realImage.height();
-                    var imageArea = width*height;
-                    var aspectRatio = (imageArea==0)?1.0:(width/height);
-                    var imageIsPortrait = aspectRatio<1.0;
-
-                    var parentWidth = window.innerWidth;
-                    var parentHeight = window.innerHeight;
-                    var parentLimit = Math.min( parentWidth, parentHeight );
-
-                    // test width/height is same as container
-                    if ( imageIsPortrait ) {
-                        // height is the limit
-                        equal(height, parentLimit, "portrait image height correct");
-                    } else {
-                        // width is the limit
-                        equal(width, parentLimit, "landscape image width correct");
-                    }
-
-                    var originalImage = $realImage[0];
-                    var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
-
-                    // need a fuzzy compare here, it seems
-                    equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
-
-                    $image.unbind( "init" );
-                });
+                var parentWidth = window.innerWidth;
+                var parentHeight = window.innerHeight;
+                $image.bind( "init", function() { func[0]( $image, parentWidth, parentHeight ) } );
 
                 $image.singleimagedisplay();
                 $image.singleimagedisplay( 'option', 'source', "images/singleimage_sm_s.jpg" );
@@ -504,35 +415,9 @@
 
                 var $image = $new_page.find( imageId );
                 ok( $image, imageId+" found" );
-                $image.bind( "init", function() {
-                    var $realImage = $image.siblings("img.ui-singleimagedisplay");
-                    var width = $realImage.width();
-                    var height = $realImage.height();
-                    var imageArea = width*height;
-                    var aspectRatio = (imageArea==0)?1.0:(width/height);
-                    var imageIsPortrait = aspectRatio<1.0;
-
-                    var parentWidth = window.innerWidth;
-                    var parentHeight = window.innerHeight;
-                    var parentLimit = Math.min( parentWidth, parentHeight );
-
-                    // test width/height is same as container
-                    if ( imageIsPortrait ) {
-                        // height is the limit
-                        equal(height, parentLimit, "portrait image height correct");
-                    } else {
-                        // width is the limit
-                        equal(width, parentLimit, "landscape image width correct");
-                    }
-
-                    var originalImage = $realImage[0];
-                    var originalAspectRatio = originalImage.naturalWidth/originalImage.naturalHeight;
-
-                    // need a fuzzy compare here, it seems
-                    equal( Math.round(aspectRatio*10)/10, originalAspectRatio, "aspect ratio correct" );
-
-                    $image.unbind( "init" );
-                });
+                var parentWidth = window.innerWidth;
+                var parentHeight = window.innerHeight;
+                $image.bind( "init", function() { func[0]( $image, parentWidth, parentHeight ) } );
 
                 $image.singleimagedisplay();
                 $image.singleimagedisplay( 'option', 'source', "images/singleimage_s.jpg" );
